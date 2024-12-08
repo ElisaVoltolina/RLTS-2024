@@ -33,7 +33,10 @@ def main():
             local_search(startTime)  # Perform local search to optimize the current solution
             endTime = time.time()  # Update the end time
         
-       
+        bestTime=transfer()[0]
+        ver_num= transfer()[1]
+        edge_num=transfer()[2]
+        Sb=transfer()[3]
         print(f"Run {i + 1} completed. Iterations: {iter_count}. Best time: {bestTime}.")
 
         # Append the results to the Excel sheet

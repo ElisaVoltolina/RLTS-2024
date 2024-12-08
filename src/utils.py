@@ -1,29 +1,33 @@
-import time
+import numpy as np
 import time
 import random
 from openpyxl import Workbook
 from .constants import *
 
 # init
-Sc = 0
-Scb = 0
-Sb = 0
-edge_num = 0
-ver_num = 0
+
 iter_count = 0  # Iteration count
 pro = 50  # Probability of selecting neighbors
 
-def random_int(n):      
+def random_int(n):   
     """Randomly generate an integer from 0 to (n-1)."""
     new_var = np.random.randint
     return new_var(n)   
 
 def read_initial(in_file):
     """Read the initial graph data from the given input file."""
+    
+    
     global ver_num, edge_num, edge, adj, color, p
     global adjlen, tabu, v2color, current_best_color, best_color
     global initial_color, last_color, v2idx, conect, colorlen, bian
-
+    Sc = 0
+    Scb = 0
+    Sb = 0
+    edge_num = 0
+    ver_num = 0
+    
+    
     with open(in_file, 'r') as f:
         ver_num, edge_num = map(int, f.readline().strip().split()) #number of vertecies and number of edges
         edge = np.zeros((ver_num, ver_num), dtype=int)  # Edge connection matrix
@@ -59,7 +63,6 @@ def read_initial(in_file):
                     adj[j].append(i)
                     adjlen[i] += 1
                     adjlen[j] += 1
-
 
 def random_initial():
     """Construct an initial solution by randomly assigning one of two colors to each vertex."""
@@ -105,9 +108,8 @@ def random_initial():
     Scb = Sc
     Sb = Sc
 
-
 def one_flip(n):
-    """..."""
+    """to flip the color of a vertex nn in the graph and update the associated data structures"""
     global Sc, bian, color, v2color, v2idx, colorlen, conect, adj, adjlen
 
     # Current color and index of vertex n
@@ -115,29 +117,29 @@ def one_flip(n):
     new_color = 1 - org_color
     org_idx = v2idx[n]
 
-    print(f"FLIP: Vertex {n}, org_color={org_color}, new_color={new_color}")
+    #print(f"FLIP: Vertex {n}, org_color={org_color}, new_color={new_color}")
 
-    # Step 1: Move vertex n to the new color group
+    # Move vertex n to the new color group
     color[new_color][colorlen[new_color]] = n
     v2color[n] = new_color
     v2idx[n] = colorlen[new_color]
     colorlen[new_color] += 1
 
-    # Step 2: Remove vertex n from the original color group
+    #Remove vertex n from the original color group
     if org_idx != colorlen[org_color] - 1:
         last_vertex = color[org_color][colorlen[org_color] - 1]
         color[org_color][org_idx] = last_vertex
         v2idx[last_vertex] = org_idx
     colorlen[org_color] -= 1
 
-    # Step 3: Update `bian` and `conect` for vertex n
-    print(f"Before Update: bian={bian}, conect[n]={conect[n]}")
+    #Update `bian` and `conect` for vertex n
+    #print(f"Before Update: bian={bian}, conect[n]={conect[n]}")
     bian[org_color] -= conect[n]
     conect[n] = adjlen[n] - conect[n]
     bian[new_color] += conect[n]
-    print(f"After Update: bian={bian}, conect[n]={conect[n]}")
+    #print(f"After Update: bian={bian}, conect[n]={conect[n]}")
 
-    # Step 4: Update the connection counts of n's neighbors
+    #Update the connection counts of n's neighbors
     for i in range(adjlen[n]):
         neighbor = adj[n][i]
         if v2color[neighbor] == org_color:
@@ -145,11 +147,10 @@ def one_flip(n):
         else:
             conect[neighbor] += 1
 
-    # Step 5: Update the Sc value
+    #Update the Sc value
     old_Sc = Sc
     Sc = min(bian[0], bian[1])
-    print(f"Updated Sc: {old_Sc} -> {Sc} (bian={bian})")
-    
+    #print(f"Updated Sc: {old_Sc} -> {Sc} (bian={bian})")
 
 def pertubation():
     """applying a small random perturbation to the current solution
@@ -163,8 +164,6 @@ def pertubation():
         one_flip(j)  # Flip the color of the selected vertex
         tabu[j] = 0  # Reset the tabu status of the flipped vertex
     #print(f"iter: {iter} dopo，sc: {Sc}")
-
-#these two #line are to log the value of Sc before and after the perturbation process.
 
 def updateP():
     """adjusts probabilities based on the algorithm's reinforcement learning mechanism
@@ -200,7 +199,7 @@ def updateP():
             p[i][last_color[i]] = gamma1 + ((1 - gamma1) * beta) + ((1 - gamma1) * (1 - beta) * p[i][last_color[i]])
             p[i][initial_color[i]] = (1 - gamma1) * (1 - beta) * p[i][initial_color[i]]
 
-    # Uncomment this section to print the updated probabilities for debugging purposes
+    # Uncomment this section to print the updated probabilities 
     # for i in range(1, verNum):
     #     print(i, p[i][0], p[i][1])
 
@@ -221,7 +220,6 @@ def restart():
         tabu[i] = 0
         conect[i] = 0
 
-    # This part of coloring needs improvement
     updateP()       #probabilities that will be used in the roulette wheel selection
 
     # roulette wheel selection
@@ -258,13 +256,13 @@ def restart():
     Sc = min(bian[0], bian[1])  # Update Sc with the minimum conflict score
     Scb = Sc  # Store the best score so far
 
-
+import time
 def judge_best(t):
     """tracking the best solution found so far"""
     global Sc, Scb, Sb, no_improve, current_best_color, best_color, bestTime, pertubation_time, pro, startTime, endTime
 
 
-    print(f"Debug: Sc = {Sc}, Scb = {Scb}, Sb = {Sb}")
+    #print(f"Debug: Sc = {Sc}, Scb = {Scb}, Sb = {Sb}")
 
     # If the current solution is better than the best solution so far (Sc > Scb)
     if Sc > Scb:
@@ -277,6 +275,7 @@ def judge_best(t):
         if Sc > Sb:
             endTime = time.time()  # Record the end time
             bestTime = endTime - t # Calculate elapsed time
+            
             Sb = Sc  # Update the global best score
             for i in range(ver_num):     # Save the current coloring as the global best solution
                 best_color[i] = v2color[i]
@@ -295,7 +294,7 @@ def judge_best(t):
                 # Restart the search if the restart threshold is reached
                 pertubation_time = 0  # Reset the perturbation count
                 restart()  # Perform a full restart of the algorithm
-
+    
 
 def local_search(t):
     """Optimizing the current solution by either flipping the color of
@@ -315,7 +314,7 @@ def local_search(t):
             m = bian[v2color[i]] - conect[i]  # Loss from the old color
             delta = min(k, m) - Sc  # Calculate improvement (delta)
 
-            print(f"Vertex {i}: k={k}, m={m}, delta={delta}, tabu={tabu[i]}")
+            #print(f"Vertex {i}: k={k}, m={m}, delta={delta}, tabu={tabu[i]}")
 
             if delta > temp_delta:
                 temp_delta = delta
@@ -326,13 +325,14 @@ def local_search(t):
                     mark = i
 
         if mark == -1:
-            print("Warning: No valid vertex found for FLIP (mark == -1). Skipping FLIP.")
+            #print("Warning: No valid vertex found for FLIP (mark == -1). Skipping FLIP.")
+            pass
         else:
-            print(f"Performing FLIP on vertex {mark}. Delta: {temp_delta}.")
+            #print(f"Performing FLIP on vertex {mark}. Delta: {temp_delta}.")
             tabu[mark] = iter_count + tt  # Add the vertex to the tabu list
             one_flip(mark)  # Perform the flip
             if Sc > Sb:
-                print(f"New best score found with FLIP. Sc: {Sc}, Sb: {Sb}.")
+                #print(f"New best score found with FLIP. Sc: {Sc}, Sb: {Sb}.")
                 pro += 1  # Increase probability threshold if solution improves
 
     else:  # SWAP operation
@@ -360,9 +360,10 @@ def local_search(t):
                         swap_1 = org_1
 
         if swap_0 == -1 or swap_1 == -1:
-            print("Warning: No valid vertices found for SWAP (swap_0 == -1 or swap_1 == -1). Skipping SWAP.")
+            #print("Warning: No valid vertices found for SWAP (swap_0 == -1 or swap_1 == -1). Skipping SWAP.")
+            pass
         else:
-            print(f"Performing SWAP between vertices {swap_0} and {swap_1}. Delta: {swap_delta}.")
+            #print(f"Performing SWAP between vertices {swap_0} and {swap_1}. Delta: {swap_delta}.")
             # Perform the SWAP move (flipping both vertices)
             tabu[swap_0] = iter_count + tt
             tabu[swap_1] = iter_count + tt
@@ -370,9 +371,15 @@ def local_search(t):
             one_flip(swap_1)
 
         if Sc > Sb:
-            print(f"New best score found with SWAP. Sc: {Sc}, Sb: {Sb}.")
+            #print(f"New best score found with SWAP. Sc: {Sc}, Sb: {Sb}.")
             pro -= 1  # Decrease probability threshold if solution improves
 
     # Check if this is the best solution so far
     judge_best(t)
-    print(f"Judge Best: Sc: {Sc}, Sb: {Sb}.")
+    
+    #print(f"Judge Best: Sc: {Sc}, Sb: {Sb}.")
+    
+def transfer():
+    global bestTime, ver_num, edge_num, Sb
+    return [bestTime, ver_num, edge_num, Sb]
+
