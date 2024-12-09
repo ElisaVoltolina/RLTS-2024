@@ -6,4 +6,4 @@ Structure of the Repository:
    - main: Contains the main function that runs the algorithm.
    - src: Includes all utility and constants
 3.	Sensitivity analysis: in the folder named “sensitivity-analysis-nb”
-The dataset used for experiments is from the publicly available DIMACS collection.
+ The dataset used for experiments is from the publicly available DIMACS collection.
